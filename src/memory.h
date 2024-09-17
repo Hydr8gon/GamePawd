@@ -17,25 +17,11 @@
     along with GamePawd. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <wx/wx.h>
-#include "../arm9.h"
+#pragma once
 
-class gpApp: public wxApp {
-private:
-    bool OnInit();
-};
+#include <cstdint>
 
-bool gpApp::OnInit() {
-    // Make a useless window for fun
-    SetAppName("GamePawd");
-    wxFrame *frame = new wxFrame(nullptr, wxID_ANY, "GamePawd");
-    frame->Show(true);
-
-    // Do something with the ARM9
-    Arm9::reset();
-    Arm9::runOpcode();
-    return true;
+namespace Memory {
+    template <typename T> T read(uint32_t address);
+    template <typename T> void write(uint32_t address, T value);
 }
-
-// Let wxWidgets handle the main function
-wxIMPLEMENT_APP(gpApp);
