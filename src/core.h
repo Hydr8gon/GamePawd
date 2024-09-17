@@ -19,10 +19,8 @@
 
 #pragma once
 
-#include <cstdint>
-
-namespace Memory {
-    void reset();
-    template <typename T> T read(uint32_t address);
-    template <typename T> void write(uint32_t address, T value);
+namespace Core {
+    void loadFirm();
+    void start();
+    void stop();
 }

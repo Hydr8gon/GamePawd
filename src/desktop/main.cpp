@@ -18,7 +18,7 @@
 */
 
 #include <wx/wx.h>
-#include "../arm9.h"
+#include "../core.h"
 
 class gpApp: public wxApp {
 private:
@@ -31,9 +31,9 @@ bool gpApp::OnInit() {
     wxFrame *frame = new wxFrame(nullptr, wxID_ANY, "GamePawd");
     frame->Show(true);
 
-    // Do something with the ARM9
-    Arm9::reset();
-    Arm9::runOpcode();
+    // Boot the firmware
+    Core::loadFirm();
+    Core::start();
     return true;
 }
 
