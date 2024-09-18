@@ -23,6 +23,7 @@
 #include "core.h"
 #include "arm9.h"
 #include "memory.h"
+#include "spi.h"
 
 namespace Core {
     bool running;
@@ -67,8 +68,9 @@ void Core::loadFirm() {
         delete[] firm;
     }
 
-    // Reset the ARM9 after loading so its pipeline can be filled
+    // Reset the rest of the emulator
     Arm9::reset();
+    Spi::reset();
 }
 
 void Core::start() {
