@@ -17,6 +17,8 @@
     along with GamePawd. If not, see <https://www.gnu.org/licenses/>.
 */
 
+#pragma once
+
 #include <cstdint>
 
 namespace Spi {

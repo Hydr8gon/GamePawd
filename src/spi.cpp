@@ -104,10 +104,15 @@ void Spi::writeData(uint32_t mask, uint32_t value) {
         return;
     }
 
-    // Set the command byte on first write
-    if (writeCount == 0) {
+    // Process the incoming data
+    if (++writeCount == 1) {
+        // Set the command byte on first write
         command = (value & mask);
         address = 0;
+    }
+    else if (writeCount < 6) {
+        // Set an address byte on writes 2 to 5
+        address |= (value & mask) << ((5 - writeCount) * 8);
     }
 
     // Handle FLASH commands with special behavior

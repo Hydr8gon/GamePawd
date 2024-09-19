@@ -17,7 +17,20 @@
     along with GamePawd. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "gp_app.h"
+#pragma once
 
-// Let wxWidgets handle the main function
-wxIMPLEMENT_APP(gpApp);
+#include <wx/wx.h>
+
+#define MIN_SIZE wxSize(854, 480)
+class gpCanvas;
+
+class gpFrame: public wxFrame {
+public:
+    gpFrame();
+
+private:
+    gpCanvas *canvas;
+
+    void close(wxCloseEvent &event);
+    wxDECLARE_EVENT_TABLE();
+};

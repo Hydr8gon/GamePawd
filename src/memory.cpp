@@ -21,6 +21,7 @@
 #include <cstring>
 
 #include "memory.h"
+#include "display.h"
 #include "spi.h"
 
 // Defines a 32-bit register in an I/O switch statement
@@ -37,6 +38,7 @@ case addr + 2: case addr + 3: \
 
 namespace Memory {
     uint8_t ram[0x400000]; // 4MB RAM
+    uint32_t counter;
 
     template <typename T> T ioRead(uint32_t address);
     template <typename T> void ioWrite(uint32_t address, T value);
@@ -46,6 +48,7 @@ void Memory::reset()
 {
     // Reset the memory array
     memset(ram, 0, sizeof(ram));
+    counter = 0;
 }
 
 template uint8_t Memory::read(uint32_t address);
@@ -98,6 +101,7 @@ template <typename T> T Memory::ioRead(uint32_t address) {
             DEF_IO32(0xF0004404, data = Spi::readControl())
             DEF_IO32(0xF000440C, data = Spi::readFifoStat())
             DEF_IO32(0xF0004410, data = Spi::readData())
+            DEF_IO32(0xF0000408, data = ++counter) // TODO: unstub
 
         default:
             // Handle unknown reads by returning nothing
@@ -128,6 +132,9 @@ template <typename T> void Memory::ioWrite(uint32_t address, T value) {
             DEF_IO32(0xF0004404, Spi::writeControl(IOWR_PARAMS))
             DEF_IO32(0xF0004410, Spi::writeData(IOWR_PARAMS))
             DEF_IO32(0xF0004420, Spi::writeReadCount(IOWR_PARAMS))
+            DEF_IO32(0xF0009474, Display::writeFbAddr(IOWR_PARAMS))
+            DEF_IO32(0xF0009500, Display::writePalAddr(IOWR_PARAMS))
+            DEF_IO32(0xF0009504, Display::writePalData(IOWR_PARAMS))
 
         default:
             // Handle unknown writes by doing nothing

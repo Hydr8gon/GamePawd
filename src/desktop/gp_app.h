@@ -17,7 +17,18 @@
     along with GamePawd. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "gp_app.h"
+#pragma once
 
-// Let wxWidgets handle the main function
-wxIMPLEMENT_APP(gpApp);
+#include "gp_frame.h"
+
+class gpApp: public wxApp {
+private:
+    gpFrame *frame;
+    wxTimer *timer;
+
+    bool OnInit();
+    int OnExit();
+
+    void update(wxTimerEvent &event);
+    wxDECLARE_EVENT_TABLE();
+};

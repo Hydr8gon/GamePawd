@@ -17,7 +17,15 @@
     along with GamePawd. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "gp_app.h"
+#pragma once
 
-// Let wxWidgets handle the main function
-wxIMPLEMENT_APP(gpApp);
+#include <cstdint>
+
+namespace Display {
+    void reset();
+    uint32_t *getBuffer();
+
+    void writeFbAddr(uint32_t mask, uint32_t value);
+    void writePalAddr(uint32_t mask, uint32_t value);
+    void writePalData(uint32_t mask, uint32_t value);
+}

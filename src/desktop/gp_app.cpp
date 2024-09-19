@@ -19,5 +19,32 @@
 
 #include "gp_app.h"
 
-// Let wxWidgets handle the main function
-wxIMPLEMENT_APP(gpApp);
+enum AppEvent {
+    UPDATE = 1
+};
+
+wxBEGIN_EVENT_TABLE(gpApp, wxApp)
+EVT_TIMER(UPDATE, gpApp::update)
+wxEND_EVENT_TABLE()
+
+bool gpApp::OnInit() {
+    // Create the app's frame
+    SetAppName("GamePawd");
+    frame = new gpFrame();
+
+    // Set up the update timer
+    timer = new wxTimer(this, UPDATE);
+    timer->Start(6);
+    return true;
+}
+
+int gpApp::OnExit() {
+    // Stop the timer before exiting
+    timer->Stop();
+    return wxApp::OnExit();
+}
+
+void gpApp::update(wxTimerEvent &event) {
+    // Continuously refresh the frame
+    frame->Refresh();
+}

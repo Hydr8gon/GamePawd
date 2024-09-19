@@ -17,7 +17,33 @@
     along with GamePawd. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include "gp_app.h"
+#pragma once
 
-// Let wxWidgets handle the main function
-wxIMPLEMENT_APP(gpApp);
+#include <chrono>
+#include <wx/wx.h>
+#include <wx/glcanvas.h>
+
+class gpFrame;
+
+class gpCanvas: public wxGLCanvas {
+public:
+    gpCanvas(gpFrame *frame);
+
+private:
+    gpFrame *frame;
+    wxGLContext *context;
+
+    uint32_t width = 0;
+    uint32_t height = 0;
+    uint32_t x = 0;
+    uint32_t y = 0;
+
+    int frameCount = 0;
+    int swapInterval = 0;
+    int refreshRate = 0;
+    std::chrono::steady_clock::time_point lastRateTime;
+
+    void draw(wxPaintEvent &event);
+    void resize(wxSizeEvent &event);
+    wxDECLARE_EVENT_TABLE();
+};

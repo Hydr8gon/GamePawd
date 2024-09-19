@@ -22,6 +22,7 @@
 
 #include "core.h"
 #include "arm9.h"
+#include "display.h"
 #include "memory.h"
 #include "spi.h"
 
@@ -70,6 +71,7 @@ void Core::loadFirm() {
 
     // Reset the rest of the emulator
     Arm9::reset();
+    Display::reset();
     Spi::reset();
 }
 
