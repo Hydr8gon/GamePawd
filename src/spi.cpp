@@ -18,9 +18,15 @@
 */
 
 #include <cstdio>
+
 #include "spi.h"
+#include "memory.h"
 
 namespace Spi {
+    uint8_t *firmware;
+    uint32_t firmSize;
+    uint32_t partStart;
+
     uint32_t writeCount;
     uint32_t address;
     uint8_t flashStatus;
@@ -40,6 +46,41 @@ void Spi::reset() {
     // Reset the I/O registers
     control = 0;
     readCount = 0;
+
+    // Parse the firmware so it can be mapped to FLASH
+    if (FILE *file = fopen("drc_fw.bin", "rb")) {
+        // Load the firmware file into memory
+        fseek(file, 0, SEEK_END);
+        firmSize = ftell(file);
+        fseek(file, 0, SEEK_SET);
+        delete[] firmware;
+        firmware = new uint8_t[firmSize];
+        fread(firmware, sizeof(uint8_t), firmSize, file);
+        fclose(file);
+
+        // Determine start and end offsets of the ARM9 code
+        uint32_t start = 0, end = 0;
+        for (uint32_t i = 8; i < firmSize; i += 4) {
+            // Find the start of the partition table
+            uint8_t *data = &firmware[i];
+            if (data[0] == 'I' && data[1] == 'N' && data[2] == 'D' && data[3] == 'X') {
+                start = partStart = i - 8;
+                continue;
+            }
+
+            // Find the ARM9 code entry and parse offset and length
+            if (start && data[0] == 'L' && data[1] == 'V' && data[2] == 'C' && data[3] == '_') {
+                start += (data[-8] | (data[-7] << 8) | (data[-6] << 16) | (data[-5] << 24));
+                end = start + (data[-4] | (data[-3] << 8) | (data[-2] << 16) | (data[-1] << 24));
+                printf("Found ARM9 code at 0x%X with size 0x%X\n", start, end - start);
+                break;
+            }
+        }
+
+        // Copy the ARM9 code into memory
+        for (uint32_t i = start; i < end; i++)
+            Memory::write(i - start, firmware[i]);
+    }
 }
 
 uint32_t Spi::readControl() {
@@ -65,6 +106,12 @@ uint32_t Spi::readData() {
 
     // Handle the current FLASH command
     switch (command) {
+    case 0x03: // Read
+        // Return a byte from FLASH and increment the address
+        if (address++ >= 0x100000 && address <= 0x100000 + firmSize - partStart)
+            return firmware[partStart + address - 0x100001];
+        return 0;
+
     case 0x05: // Read status register
         // Return the current status value
         return flashStatus;

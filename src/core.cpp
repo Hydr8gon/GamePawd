@@ -17,7 +17,6 @@
     along with GamePawd. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <cstdio>
 #include <thread>
 
 #include "core.h"
@@ -33,46 +32,12 @@ namespace Core {
     void runLoop();
 }
 
-void Core::loadFirm() {
-    // Reset memory and load the firmware
-    Memory::reset();
-    if (FILE *file = fopen("drc_fw.bin", "rb")) {
-        // Load the firmware file into memory
-        fseek(file, 0, SEEK_END);
-        uint32_t size = ftell(file);
-        fseek(file, 0, SEEK_SET);
-        uint8_t *firm = new uint8_t[size];
-        fread(firm, sizeof(uint8_t), size, file);
-        fclose(file);
-
-        // Determine start and end offsets of the ARM9 code
-        uint32_t start = 0, end = 0;
-        for (uint32_t i = 8; i < size; i += 4) {
-            // Find the start of the partition table
-            if (firm[i] == 'I' && firm[i + 1] == 'N' && firm[i + 2] == 'D' && firm[i + 3] == 'X') {
-                start = i - 8;
-                continue;
-            }
-
-            // Find the ARM9 code entry and parse offset and length
-            if (start && firm[i] == 'L' && firm[i + 1] == 'V' && firm[i + 2] == 'C' && firm[i + 3] == '_') {
-                start += (firm[i - 8] | (firm[i - 7] << 8) | (firm[i - 6] << 16) | (firm[i - 5] << 24));
-                end = start + (firm[i - 4] | (firm[i - 3] << 8) | (firm[i - 2] << 16) | (firm[i - 1] << 24));
-                printf("Found ARM9 code at 0x%X with size 0x%X\n", start, end - start);
-                break;
-            }
-        }
-
-        // Copy the ARM9 code into RAM and free the firmware file
-        for (uint32_t i = start; i < end; i++)
-            Memory::write(i - start, firm[i]);
-        delete[] firm;
-    }
-
-    // Reset the rest of the emulator
-    Arm9::reset();
+void Core::reset() {
+    // Reset the emulator
     Display::reset();
+    Memory::reset();
     Spi::reset();
+    Arm9::reset();
 }
 
 void Core::start() {

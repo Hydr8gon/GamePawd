@@ -39,7 +39,7 @@ gpFrame::gpFrame(): wxFrame(nullptr, wxID_ANY, "GamePawd") {
     Show(true);
 
     // Boot the firmware
-    Core::loadFirm();
+    Core::reset();
     Core::start();
 }
 

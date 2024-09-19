@@ -20,7 +20,7 @@
 #pragma once
 
 namespace Core {
-    void loadFirm();
+    void reset();
     void start();
     void stop();
 }
