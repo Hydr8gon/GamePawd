@@ -31,6 +31,7 @@ namespace Spi {
     uint32_t address;
     uint8_t flashStatus;
     uint8_t command;
+    bool uicMode;
 
     uint32_t control;
     uint32_t readCount;
@@ -42,6 +43,7 @@ void Spi::reset() {
     address = 0;
     flashStatus = 0;
     command = 0;
+    uicMode = false;
 
     // Reset the I/O registers
     control = 0;
@@ -79,7 +81,7 @@ void Spi::reset() {
 
         // Copy the ARM9 code into memory
         for (uint32_t i = start; i < end; i++)
-            Memory::write(i - start, firmware[i]);
+            Memory::write<uint8_t>(i - start, firmware[i]);
     }
 }
 
@@ -99,9 +101,9 @@ uint32_t Spi::readData() {
     readCount--;
 
     // Ignore reads from the UIC for now
-    if (~control & 0x100) {
-        printf("Unimplemented SPI read from UIC\n");
-        return 0;
+    if (uicMode) {
+        printf("Unimplemented UIC read with command 0x%X\n", command);
+        return 0x79;
     }
 
     // Handle the current FLASH command
@@ -127,7 +129,7 @@ uint32_t Spi::readData() {
 
     default:
         // Handle unknown commands by doing nothing
-        printf("Unimplemented SPI read with command 0x%X\n", command);
+        printf("Unimplemented FLASH read with command 0x%X\n", command);
         return 0;
     }
 }
@@ -145,12 +147,6 @@ void Spi::writeData(uint32_t mask, uint32_t value) {
     // Ensure the transfer direction is correct
     if (control & 0x2) return;
 
-    // Ignore writes to the UIC for now
-    if (~control & 0x100) {
-        printf("Unimplemented SPI write to UIC\n");
-        return;
-    }
-
     // Process the incoming data
     if (++writeCount == 1) {
         // Set the command byte on first write
@@ -163,6 +159,7 @@ void Spi::writeData(uint32_t mask, uint32_t value) {
     }
 
     // Handle FLASH commands with special behavior
+    if (uicMode) return;
     switch (command) {
     case 0x04: // Write disable
         // Clear the write enable bit
@@ -179,4 +176,10 @@ void Spi::writeData(uint32_t mask, uint32_t value) {
 void Spi::writeReadCount(uint32_t mask, uint32_t value) {
     // Write to the SPI read count register
     readCount = (readCount & ~mask) | (value & mask);
+}
+
+void Spi::writeUicGpio(uint32_t mask, uint32_t value) {
+    // Select or deselect the UIC for SPI transfers
+    if (value & mask & 0x200)
+        uicMode = (~value & 0x100);
 }

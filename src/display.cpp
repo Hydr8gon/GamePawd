@@ -56,5 +56,8 @@ void Display::writePalAddr(uint32_t mask, uint32_t value) {
 
 void Display::writePalData(uint32_t mask, uint32_t value) {
     // Write to a palette entry and move to the next one
-    palette[palAddress++] = (value & mask);
+    uint8_t r = (value & mask) >> 16;
+    uint8_t g = (value & mask) >> 8;
+    uint8_t b = (value & mask) >> 0;
+    palette[palAddress++] = 0xFF000000 | (b << 16) | (g << 8) | r;
 }

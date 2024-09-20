@@ -17,19 +17,15 @@
     along with GamePawd. If not, see <https://www.gnu.org/licenses/>.
 */
 
-#pragma once
-
 #include <cstdint>
 
-namespace Spi {
+namespace Interrupts {
     void reset();
+    void checkIrqs();
+    void requestIrq(int i);
 
-    uint32_t readControl();
-    uint32_t readFifoStat();
-    uint32_t readData();
+    uint32_t readIrqIndex();
 
-    void writeControl(uint32_t mask, uint32_t value);
-    void writeData(uint32_t mask, uint32_t value);
-    void writeReadCount(uint32_t mask, uint32_t value);
-    void writeUicGpio(uint32_t mask, uint32_t value);
+    void writeIrqEnable(int i, uint32_t mask, uint32_t value);
+    void writeIrqAck(uint32_t mask, uint32_t value);
 }

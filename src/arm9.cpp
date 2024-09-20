@@ -21,6 +21,7 @@
 #include <cstring>
 
 #include "arm9.h"
+#include "interrupts.h"
 #include "memory.h"
 
 namespace Arm9 {
@@ -198,9 +199,9 @@ void Arm9::setCpsr(uint32_t value, bool save) {
         swapRegisters(value);
 
     // Set the CPSR, saving the old value if requested
-    // TODO: check interrupts
     if (save && spsr) *spsr = cpsr;
     cpsr = value;
+    Interrupts::checkIrqs();
 }
 
 int Arm9::unkArm(uint32_t opcode) {

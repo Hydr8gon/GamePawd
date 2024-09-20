@@ -22,6 +22,7 @@
 
 #include "memory.h"
 #include "display.h"
+#include "interrupts.h"
 #include "spi.h"
 
 // Defines a 32-bit register in an I/O switch statement
@@ -49,6 +50,9 @@ void Memory::reset()
     // Reset the memory array
     memset(ram, 0, sizeof(ram));
     counter = 0;
+
+    // Initialize values presumably set by boot0/boot1
+    ram[0x3FFFFC] = 0x79;
 }
 
 template uint8_t Memory::read(uint32_t address);
@@ -102,6 +106,7 @@ template <typename T> T Memory::ioRead(uint32_t address) {
             DEF_IO32(0xF000440C, data = Spi::readFifoStat())
             DEF_IO32(0xF0004410, data = Spi::readData())
             DEF_IO32(0xF0000408, data = ++counter) // TODO: unstub
+            DEF_IO32(0xF00013F0, data = Interrupts::readIrqIndex())
 
         default:
             // Handle unknown reads by returning nothing
@@ -129,9 +134,44 @@ template <typename T> void Memory::ioWrite(uint32_t address, T value) {
         uint32_t base, size, data = value >> (i * 8);
         uint32_t mask = (1ULL << ((sizeof(T) - i) * 8)) - 1;
         switch (base = address + i) {
+            DEF_IO32(0xF0001208, Interrupts::writeIrqEnable(0, IOWR_PARAMS))
+            DEF_IO32(0xF000120C, Interrupts::writeIrqEnable(1, IOWR_PARAMS))
+            DEF_IO32(0xF0001210, Interrupts::writeIrqEnable(2, IOWR_PARAMS))
+            DEF_IO32(0xF0001214, Interrupts::writeIrqEnable(3, IOWR_PARAMS))
+            DEF_IO32(0xF0001218, Interrupts::writeIrqEnable(4, IOWR_PARAMS))
+            DEF_IO32(0xF000121C, Interrupts::writeIrqEnable(5, IOWR_PARAMS))
+            DEF_IO32(0xF0001220, Interrupts::writeIrqEnable(6, IOWR_PARAMS))
+            DEF_IO32(0xF0001224, Interrupts::writeIrqEnable(7, IOWR_PARAMS))
+            DEF_IO32(0xF0001228, Interrupts::writeIrqEnable(8, IOWR_PARAMS))
+            DEF_IO32(0xF000122C, Interrupts::writeIrqEnable(9, IOWR_PARAMS))
+            DEF_IO32(0xF0001230, Interrupts::writeIrqEnable(10, IOWR_PARAMS))
+            DEF_IO32(0xF0001234, Interrupts::writeIrqEnable(11, IOWR_PARAMS))
+            DEF_IO32(0xF0001238, Interrupts::writeIrqEnable(12, IOWR_PARAMS))
+            DEF_IO32(0xF000123C, Interrupts::writeIrqEnable(13, IOWR_PARAMS))
+            DEF_IO32(0xF0001240, Interrupts::writeIrqEnable(14, IOWR_PARAMS))
+            DEF_IO32(0xF0001244, Interrupts::writeIrqEnable(15, IOWR_PARAMS))
+            DEF_IO32(0xF0001248, Interrupts::writeIrqEnable(16, IOWR_PARAMS))
+            DEF_IO32(0xF000124C, Interrupts::writeIrqEnable(17, IOWR_PARAMS))
+            DEF_IO32(0xF0001250, Interrupts::writeIrqEnable(18, IOWR_PARAMS))
+            DEF_IO32(0xF0001254, Interrupts::writeIrqEnable(19, IOWR_PARAMS))
+            DEF_IO32(0xF0001258, Interrupts::writeIrqEnable(20, IOWR_PARAMS))
+            DEF_IO32(0xF000125C, Interrupts::writeIrqEnable(21, IOWR_PARAMS))
+            DEF_IO32(0xF0001260, Interrupts::writeIrqEnable(22, IOWR_PARAMS))
+            DEF_IO32(0xF0001264, Interrupts::writeIrqEnable(23, IOWR_PARAMS))
+            DEF_IO32(0xF0001268, Interrupts::writeIrqEnable(24, IOWR_PARAMS))
+            DEF_IO32(0xF000126C, Interrupts::writeIrqEnable(25, IOWR_PARAMS))
+            DEF_IO32(0xF0001270, Interrupts::writeIrqEnable(26, IOWR_PARAMS))
+            DEF_IO32(0xF0001274, Interrupts::writeIrqEnable(27, IOWR_PARAMS))
+            DEF_IO32(0xF0001278, Interrupts::writeIrqEnable(28, IOWR_PARAMS))
+            DEF_IO32(0xF000127C, Interrupts::writeIrqEnable(29, IOWR_PARAMS))
+            DEF_IO32(0xF0001280, Interrupts::writeIrqEnable(30, IOWR_PARAMS))
+            DEF_IO32(0xF0001284, Interrupts::writeIrqEnable(31, IOWR_PARAMS))
+            DEF_IO32(0xF00013F8, Interrupts::writeIrqAck(IOWR_PARAMS))
+            DEF_IO32(0xF0004040, Interrupts::requestIrq(8)) // TODO: unstub
             DEF_IO32(0xF0004404, Spi::writeControl(IOWR_PARAMS))
             DEF_IO32(0xF0004410, Spi::writeData(IOWR_PARAMS))
             DEF_IO32(0xF0004420, Spi::writeReadCount(IOWR_PARAMS))
+            DEF_IO32(0xF00050FC, Spi::writeUicGpio(IOWR_PARAMS))
             DEF_IO32(0xF0009474, Display::writeFbAddr(IOWR_PARAMS))
             DEF_IO32(0xF0009500, Display::writePalAddr(IOWR_PARAMS))
             DEF_IO32(0xF0009504, Display::writePalData(IOWR_PARAMS))
@@ -139,7 +179,7 @@ template <typename T> void Memory::ioWrite(uint32_t address, T value) {
         default:
             // Handle unknown writes by doing nothing
             if (i == 0) {
-                printf("Unknown I/O register write: 0x%X\n", address);
+                printf("Unknown I/O register write: 0x%X @ 0x%X\n", value, address);
                 return;
             }
 
