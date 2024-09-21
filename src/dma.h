@@ -21,13 +21,11 @@
 
 #include <cstdint>
 
-namespace Interrupts {
+namespace Dma {
     void reset();
-    void checkIrqs();
-    void requestIrq(int i);
 
-    uint32_t readIrqIndex();
-
-    void writeIrqEnable(int i, uint32_t mask, uint32_t value);
-    void writeIrqAck(uint32_t mask, uint32_t value);
+    void writeSpiEnable(uint32_t mask, uint32_t value);
+    void writeSpiControl(uint32_t mask, uint32_t value);
+    void writeSpiCount(uint32_t mask, uint32_t value);
+    void writeSpiAddress(uint32_t mask, uint32_t value);
 }

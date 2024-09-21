@@ -22,6 +22,7 @@
 
 #include "memory.h"
 #include "display.h"
+#include "dma.h"
 #include "interrupts.h"
 #include "spi.h"
 
@@ -167,7 +168,10 @@ template <typename T> void Memory::ioWrite(uint32_t address, T value) {
             DEF_IO32(0xF0001280, Interrupts::writeIrqEnable(30, IOWR_PARAMS))
             DEF_IO32(0xF0001284, Interrupts::writeIrqEnable(31, IOWR_PARAMS))
             DEF_IO32(0xF00013F8, Interrupts::writeIrqAck(IOWR_PARAMS))
-            DEF_IO32(0xF0004040, Interrupts::requestIrq(8)) // TODO: unstub
+            DEF_IO32(0xF0004040, Dma::writeSpiEnable(IOWR_PARAMS))
+            DEF_IO32(0xF0004044, Dma::writeSpiControl(IOWR_PARAMS))
+            DEF_IO32(0xF0004050, Dma::writeSpiCount(IOWR_PARAMS))
+            DEF_IO32(0xF0004054, Dma::writeSpiAddress(IOWR_PARAMS))
             DEF_IO32(0xF0004404, Spi::writeControl(IOWR_PARAMS))
             DEF_IO32(0xF0004410, Spi::writeData(IOWR_PARAMS))
             DEF_IO32(0xF0004420, Spi::writeReadCount(IOWR_PARAMS))

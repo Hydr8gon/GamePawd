@@ -22,6 +22,7 @@
 #include "core.h"
 #include "arm9.h"
 #include "display.h"
+#include "dma.h"
 #include "interrupts.h"
 #include "memory.h"
 #include "spi.h"
@@ -36,6 +37,7 @@ namespace Core {
 void Core::reset() {
     // Reset the emulator
     Display::reset();
+    Dma::reset();
     Interrupts::reset();
     Memory::reset();
     Spi::reset();
