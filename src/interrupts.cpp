@@ -40,7 +40,7 @@ void Interrupts::checkIrqs() {
     if ((requestFlags & enableMask) && !(Arm9::cpsr & 0x80)) {
         for (irqIndex = 0; !(enableMask & requestFlags & (1 << irqIndex)); irqIndex++);
         Arm9::exception(0x18);
-        printf("Interrupt %d triggered\n", irqIndex);
+        //printf("Interrupt %d triggered\n", irqIndex);
     }
 }
 

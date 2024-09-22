@@ -25,6 +25,7 @@
 #include "dma.h"
 #include "interrupts.h"
 #include "spi.h"
+#include "timers.h"
 
 // Defines a 32-bit register in an I/O switch statement
 #define DEF_IO32(addr, func) \
@@ -61,9 +62,9 @@ template uint16_t Memory::read(uint32_t address);
 template uint32_t Memory::read(uint32_t address);
 template <typename T> T Memory::read(uint32_t address) {
     // Read an LSB-first value from an aligned RAM address or I/O register
-    if ((address &= ~(sizeof(T) - 1)) < 0x400000) {
+    if ((address &= ~(sizeof(T) - 1)) < 0x40000000) {
         T value = 0;
-        uint8_t *data = &ram[address];
+        uint8_t *data = &ram[address & 0x3FFFFF];
         for (uint32_t i = 0; i < sizeof(T); i++)
             value |= data[i] << (i * 8);
         return value;
@@ -82,8 +83,8 @@ template void Memory::write(uint32_t address, uint16_t value);
 template void Memory::write(uint32_t address, uint32_t value);
 template <typename T> void Memory::write(uint32_t address, T value) {
     // Write an LSB-first value to an aligned RAM address or I/O register
-    if ((address &= ~(sizeof(T) - 1)) < 0x400000) {
-        uint8_t *data = &ram[address];
+    if ((address &= ~(sizeof(T) - 1)) < 0x40000000) {
+        uint8_t *data = &ram[address & 0x3FFFFF];
         for (uint32_t i = 0; i < sizeof(T); i++)
             data[i] = value >> (i * 8);
         return;
@@ -103,11 +104,19 @@ template <typename T> T Memory::ioRead(uint32_t address) {
         // Load data from a register
         uint32_t base, size, data;
         switch (base = address + i) {
+            DEF_IO32(0xF0000408, data = Timers::readCounter())
+            DEF_IO32(0xF0000414, data = Timers::readTimer(0))
+            DEF_IO32(0xF0000424, data = Timers::readTimer(1))
+            DEF_IO32(0xF00013F0, data = Interrupts::readIrqIndex())
+            DEF_IO32(0xF00019F8, data = 0) // Interrupt stub
+            DEF_IO32(0xF00019FC, data = 0) // Interrupt stub
+            DEF_IO32(0xF0004050, data = Dma::readSpiCount())
+            DEF_IO32(0xF0004114, data = Dma::readCount(0))
+            DEF_IO32(0xF0004154, data = Dma::readCount(1))
+            DEF_IO32(0xF0004194, data = Dma::readCount(2))
             DEF_IO32(0xF0004404, data = Spi::readControl())
             DEF_IO32(0xF000440C, data = Spi::readFifoStat())
             DEF_IO32(0xF0004410, data = Spi::readData())
-            DEF_IO32(0xF0000408, data = ++counter) // TODO: unstub
-            DEF_IO32(0xF00013F0, data = Interrupts::readIrqIndex())
 
         default:
             // Handle unknown reads by returning nothing
@@ -135,6 +144,10 @@ template <typename T> void Memory::ioWrite(uint32_t address, T value) {
         uint32_t base, size, data = value >> (i * 8);
         uint32_t mask = (1ULL << ((sizeof(T) - i) * 8)) - 1;
         switch (base = address + i) {
+            DEF_IO32(0xF0000410, Timers::writeControl(0, IOWR_PARAMS))
+            DEF_IO32(0xF0000418, Timers::writeReload(0, IOWR_PARAMS))
+            DEF_IO32(0xF0000420, Timers::writeControl(1, IOWR_PARAMS))
+            DEF_IO32(0xF0000428, Timers::writeReload(1, IOWR_PARAMS))
             DEF_IO32(0xF0001208, Interrupts::writeIrqEnable(0, IOWR_PARAMS))
             DEF_IO32(0xF000120C, Interrupts::writeIrqEnable(1, IOWR_PARAMS))
             DEF_IO32(0xF0001210, Interrupts::writeIrqEnable(2, IOWR_PARAMS))
@@ -172,6 +185,18 @@ template <typename T> void Memory::ioWrite(uint32_t address, T value) {
             DEF_IO32(0xF0004044, Dma::writeSpiControl(IOWR_PARAMS))
             DEF_IO32(0xF0004050, Dma::writeSpiCount(IOWR_PARAMS))
             DEF_IO32(0xF0004054, Dma::writeSpiAddress(IOWR_PARAMS))
+            DEF_IO32(0xF0004100, Dma::writeEnable(0, IOWR_PARAMS))
+            DEF_IO32(0xF0004114, Dma::writeCount(0, IOWR_PARAMS))
+            DEF_IO32(0xF0004118, Dma::writeSrcAddr(0, IOWR_PARAMS))
+            DEF_IO32(0xF000411C, Dma::writeDstAddr(0, IOWR_PARAMS))
+            DEF_IO32(0xF0004140, Dma::writeEnable(1, IOWR_PARAMS))
+            DEF_IO32(0xF0004154, Dma::writeCount(1, IOWR_PARAMS))
+            DEF_IO32(0xF0004158, Dma::writeSrcAddr(1, IOWR_PARAMS))
+            DEF_IO32(0xF000415C, Dma::writeDstAddr(1, IOWR_PARAMS))
+            DEF_IO32(0xF0004180, Dma::writeEnable(2, IOWR_PARAMS))
+            DEF_IO32(0xF0004194, Dma::writeCount(2, IOWR_PARAMS))
+            DEF_IO32(0xF0004198, Dma::writeSrcAddr(2, IOWR_PARAMS))
+            DEF_IO32(0xF000419C, Dma::writeDstAddr(2, IOWR_PARAMS))
             DEF_IO32(0xF0004404, Spi::writeControl(IOWR_PARAMS))
             DEF_IO32(0xF0004410, Spi::writeData(IOWR_PARAMS))
             DEF_IO32(0xF0004420, Spi::writeReadCount(IOWR_PARAMS))

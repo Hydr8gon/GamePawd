@@ -26,6 +26,7 @@
 #include "interrupts.h"
 #include "memory.h"
 #include "spi.h"
+#include "timers.h"
 
 namespace Core {
     bool running;
@@ -41,6 +42,7 @@ void Core::reset() {
     Interrupts::reset();
     Memory::reset();
     Spi::reset();
+    Timers::reset();
     Arm9::reset();
 }
 
@@ -60,7 +62,9 @@ void Core::stop() {
 }
 
 void Core::runLoop() {
-    // Run the ARM9
-    while (running)
+    // Run the emulator
+    while (running) {
         Arm9::runOpcode();
+        Timers::tick();
+    }
 }

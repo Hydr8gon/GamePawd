@@ -21,18 +21,13 @@
 
 #include <cstdint>
 
-namespace Dma {
+namespace Timers {
     void reset();
+    void tick();
 
-    uint32_t readSpiCount();
-    uint32_t readCount(int i);
+    uint32_t readCounter();
+    uint32_t readTimer(int i);
 
-    void writeSpiEnable(uint32_t mask, uint32_t value);
-    void writeSpiControl(uint32_t mask, uint32_t value);
-    void writeSpiCount(uint32_t mask, uint32_t value);
-    void writeSpiAddress(uint32_t mask, uint32_t value);
-    void writeEnable(int i, uint32_t mask, uint32_t value);
-    void writeCount(int i, uint32_t mask, uint32_t value);
-    void writeSrcAddr(int i, uint32_t mask, uint32_t value);
-    void writeDstAddr(int i, uint32_t mask, uint32_t value);
+    void writeControl(int i, uint32_t mask, uint32_t value);
+    void writeReload(int i, uint32_t mask, uint32_t value);
 }
