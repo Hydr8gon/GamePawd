@@ -23,6 +23,7 @@
 #include "arm9.h"
 #include "display.h"
 #include "dma.h"
+#include "i2c.h"
 #include "interrupts.h"
 #include "memory.h"
 #include "spi.h"
@@ -39,6 +40,7 @@ void Core::reset() {
     // Reset the emulator
     Display::reset();
     Dma::reset();
+    I2c::reset();
     Interrupts::reset();
     Memory::reset();
     Spi::reset();

@@ -21,19 +21,16 @@
 
 #include <cstdint>
 
-namespace Spi {
+namespace I2c {
     void reset();
 
-    uint32_t readControl();
     uint32_t readIrqFlags();
-    uint32_t readFifoStat();
-    uint32_t readData();
     uint32_t readIrqEnable();
+    uint32_t readData(int i);
+    uint32_t readStatus(int i);
 
-    void writeControl(uint32_t mask, uint32_t value);
-    void writeIrqFlags(uint32_t mask, uint32_t value);
-    void writeData(uint32_t mask, uint32_t value);
     void writeIrqEnable(uint32_t mask, uint32_t value);
-    void writeReadCount(uint32_t mask, uint32_t value);
-    void writeUicGpio(uint32_t mask, uint32_t value);
+    void writeIrqAck(uint32_t mask, uint32_t value);
+    void writeData(int i, uint32_t mask, uint32_t value);
+    void writeControl(int i, uint32_t mask, uint32_t value);
 }

@@ -23,6 +23,7 @@
 #include "memory.h"
 #include "display.h"
 #include "dma.h"
+#include "i2c.h"
 #include "interrupts.h"
 #include "spi.h"
 #include "timers.h"
@@ -52,9 +53,6 @@ void Memory::reset()
     // Reset the memory array
     memset(ram, 0, sizeof(ram));
     counter = 0;
-
-    // Initialize values presumably set by boot0/boot1
-    ram[0x3FFFFC] = 0x79;
 }
 
 template uint8_t Memory::read(uint32_t address);
@@ -104,6 +102,7 @@ template <typename T> T Memory::ioRead(uint32_t address) {
         // Load data from a register
         uint32_t base, size, data;
         switch (base = address + i) {
+            DEF_IO32(0xF0000000, data = 0x41040) // Hardware ID
             DEF_IO32(0xF0000408, data = Timers::readCounter())
             DEF_IO32(0xF0000414, data = Timers::readTimer(0))
             DEF_IO32(0xF0000424, data = Timers::readTimer(1))
@@ -115,8 +114,28 @@ template <typename T> T Memory::ioRead(uint32_t address) {
             DEF_IO32(0xF0004154, data = Dma::readCount(1))
             DEF_IO32(0xF0004194, data = Dma::readCount(2))
             DEF_IO32(0xF0004404, data = Spi::readControl())
+            DEF_IO32(0xF0004408, data = Spi::readIrqFlags())
             DEF_IO32(0xF000440C, data = Spi::readFifoStat())
             DEF_IO32(0xF0004410, data = Spi::readData())
+            DEF_IO32(0xF0004418, data = Spi::readIrqEnable())
+            DEF_IO32(0xF0005800, data = I2c::readIrqFlags())
+            DEF_IO32(0xF0005804, data = I2c::readIrqEnable())
+            DEF_IO32(0xF0005C00, data = 0x1) // I2C stub
+            DEF_IO32(0xF0005C04, data = I2c::readData(0))
+            DEF_IO32(0xF0005C08, data = 0x20) // I2C stub
+            DEF_IO32(0xF0005C18, data = I2c::readStatus(0))
+            DEF_IO32(0xF0006000, data = 0x1) // I2C stub
+            DEF_IO32(0xF0006004, data = I2c::readData(1))
+            DEF_IO32(0xF0006008, data = 0x20) // I2C stub
+            DEF_IO32(0xF0006018, data = I2c::readStatus(1))
+            DEF_IO32(0xF0006400, data = 0x1) // I2C stub
+            DEF_IO32(0xF0006404, data = I2c::readData(2))
+            DEF_IO32(0xF0006408, data = 0x20) // I2C stub
+            DEF_IO32(0xF0006418, data = I2c::readStatus(2))
+            DEF_IO32(0xF0006800, data = 0x1) // I2C stub
+            DEF_IO32(0xF0006804, data = I2c::readData(3))
+            DEF_IO32(0xF0006808, data = 0x20) // I2C stub
+            DEF_IO32(0xF0006818, data = I2c::readStatus(3))
 
         default:
             // Handle unknown reads by returning nothing
@@ -198,9 +217,21 @@ template <typename T> void Memory::ioWrite(uint32_t address, T value) {
             DEF_IO32(0xF0004198, Dma::writeSrcAddr(2, IOWR_PARAMS))
             DEF_IO32(0xF000419C, Dma::writeDstAddr(2, IOWR_PARAMS))
             DEF_IO32(0xF0004404, Spi::writeControl(IOWR_PARAMS))
+            DEF_IO32(0xF0004408, Spi::writeIrqFlags(IOWR_PARAMS))
             DEF_IO32(0xF0004410, Spi::writeData(IOWR_PARAMS))
+            DEF_IO32(0xF0004418, Spi::writeIrqEnable(IOWR_PARAMS))
             DEF_IO32(0xF0004420, Spi::writeReadCount(IOWR_PARAMS))
             DEF_IO32(0xF00050FC, Spi::writeUicGpio(IOWR_PARAMS))
+            DEF_IO32(0xF0005804, I2c::writeIrqEnable(IOWR_PARAMS))
+            DEF_IO32(0xF0005808, I2c::writeIrqAck(IOWR_PARAMS))
+            DEF_IO32(0xF0005C04, I2c::writeData(0, IOWR_PARAMS))
+            DEF_IO32(0xF0005C08, I2c::writeControl(0, IOWR_PARAMS))
+            DEF_IO32(0xF0006004, I2c::writeData(1, IOWR_PARAMS))
+            DEF_IO32(0xF0006008, I2c::writeControl(1, IOWR_PARAMS))
+            DEF_IO32(0xF0006404, I2c::writeData(2, IOWR_PARAMS))
+            DEF_IO32(0xF0006408, I2c::writeControl(2, IOWR_PARAMS))
+            DEF_IO32(0xF0006804, I2c::writeData(3, IOWR_PARAMS))
+            DEF_IO32(0xF0006808, I2c::writeControl(3, IOWR_PARAMS))
             DEF_IO32(0xF0009474, Display::writeFbAddr(IOWR_PARAMS))
             DEF_IO32(0xF0009500, Display::writePalAddr(IOWR_PARAMS))
             DEF_IO32(0xF0009504, Display::writePalData(IOWR_PARAMS))
