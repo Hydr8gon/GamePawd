@@ -22,12 +22,18 @@
 #include <cstdint>
 
 namespace Timers {
+    extern uint32_t timerCycles;
+    extern uint32_t countCycles;
+
     void reset();
-    void tick();
 
     uint32_t readCounter();
+    uint32_t readControl(int i);
     uint32_t readTimer(int i);
 
+    void writeTimerScale(uint32_t mask, uint32_t value);
+    void writeCountScale(uint32_t mask, uint32_t value);
+    void writeCounter(uint32_t mask, uint32_t value);
     void writeControl(int i, uint32_t mask, uint32_t value);
-    void writeReload(int i, uint32_t mask, uint32_t value);
+    void writeTarget(int i, uint32_t mask, uint32_t value);
 }

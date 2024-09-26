@@ -20,6 +20,9 @@
 #pragma once
 
 namespace Core {
+    extern uint32_t globalCycles;
+    uint32_t schedule(void (*task)(), uint32_t cycles);
+
     void reset();
     void start();
     void stop();

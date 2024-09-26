@@ -21,6 +21,7 @@
 #include <cstring>
 
 #include "arm9.h"
+#include "core.h"
 #include "interrupts.h"
 #include "memory.h"
 
@@ -201,7 +202,9 @@ void Arm9::setCpsr(uint32_t value, bool save) {
     // Set the CPSR, saving the old value if requested
     if (save && spsr) *spsr = cpsr;
     cpsr = value;
-    Interrupts::checkIrqs();
+
+    // Check if an interrupt should happen with the new CPSR
+    Core::schedule(Interrupts::checkIrqs, 1);
 }
 
 int Arm9::unkArm(uint32_t opcode) {

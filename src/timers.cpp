@@ -20,33 +20,65 @@
 #include <cstring>
 
 #include "timers.h"
+#include "core.h"
 #include "interrupts.h"
 
 namespace Timers {
+    uint8_t shifts[2];
+    uint32_t timerCycles;
+    uint32_t countCycles;
+
     uint64_t timers[2];
     uint32_t controls[2];
-    uint32_t reloads[2];
+    uint32_t targets[2];
+    uint32_t timerScale;
+    uint32_t countScale;
     uint32_t counter;
+
+    void tickTimers();
+    void tickCounter();
 }
 
 void Timers::reset() {
-    // Reset the registers
+    // Reset the prescale values
+    memset(shifts, 0, sizeof(shifts));
+    countCycles = 0;
+    timerCycles = 0;
+
+    // Reset the I/O registers
     memset(timers, 0, sizeof(timers));
     memset(controls, 0, sizeof(controls));
-    memset(reloads, 0, sizeof(reloads));
+    memset(targets, 0, sizeof(targets));
+    timerScale = 0;
+    countScale = 0;
     counter = 0;
+
+    // Schedule initial tasks
+    timerCycles = Core::schedule(tickTimers, timerScale + 1);
+    countCycles = Core::schedule(tickCounter, countScale + 1);
 }
 
-void Timers::tick() {
+void Timers::tickTimers() {
+    // Verify timestamp and schedule the next tick
+    if (timerCycles != Core::globalCycles) return;
+    timerCycles = Core::schedule(tickTimers, timerScale + 1);
+
+    // Increment enabled timers and trigger an interrupt on reload
+    for (int i = 0; i < 2; i++) {
+        if ((controls[i] & 0x2) && (timers[i]++ >> shifts[i]) == targets[i]) {
+            Interrupts::requestIrq(i);
+            timers[i] = 0;
+        }
+    }
+}
+
+void Timers::tickCounter() {
+    // Verify timestamp and schedule the next tick
+    if (countCycles != Core::globalCycles) return;
+    countCycles = Core::schedule(tickCounter, countScale + 1);
+
     // Increment the counter
     counter++;
-
-    // Decrement enabled timers and trigger an interrupt on reload
-    for (int i = 0; i < 2; i++) {
-        if ((~controls[i] & 0x2) || timers[i]-- != 0) continue;
-        timers[i] = reloads[i] << ((controls[i] >> 4) & 0x7);
-        Interrupts::requestIrq(i);
-    }
 }
 
 uint32_t Timers::readCounter() {
@@ -54,21 +86,43 @@ uint32_t Timers::readCounter() {
     return counter;
 }
 
+uint32_t Timers::readControl(int i) {
+    // Read from one of the timer control registers
+    return controls[i];
+}
+
 uint32_t Timers::readTimer(int i) {
     // Read one of the current timer values, adjusted for prescaling
-    return timers[i] >> ((controls[i] >> 4) & 0x7);
+    return timers[i] >> shifts[i];
+}
+
+void Timers::writeTimerScale(uint32_t mask, uint32_t value) {
+    // Write to the timer prescale register and reschedule its next tick
+    timerScale = (timerScale & ~mask) | (timerScale & mask);
+    timerCycles = Core::schedule(tickTimers, timerScale + 1);
+}
+
+void Timers::writeCountScale(uint32_t mask, uint32_t value) {
+    // Write to the counter prescale register and reschedule its next tick
+    countScale = (countScale & ~mask) | (timerScale & mask);
+    countCycles = Core::schedule(tickCounter, countScale + 1);
+}
+
+void Timers::writeCounter(uint32_t mask, uint32_t value) {
+    // Write a new value to the counter
+    counter = (counter & ~mask) | (value & mask);
 }
 
 void Timers::writeControl(int i, uint32_t mask, uint32_t value) {
-    // Reload the timer, adjusted for prescaling, if it becomes enabled
-    if ((~controls[i] & 0x2) && (value & mask & 0x2))
-        timers[i] = reloads[i] << ((value >> 4) & 0x7);
-
-    // Write to one of the timer control values
+    // Write to one of the timer control registers
     controls[i] = (controls[i] & ~mask) | (value & mask);
+
+    // Set the prescale shift and reset the timer if disabled
+    shifts[i] = ((controls[i] >> 4) & 0x7) + 1;
+    if (~controls[i] & 0x2) timers[i] = 0;
 }
 
-void Timers::writeReload(int i, uint32_t mask, uint32_t value) {
-    // Write to one of the timer reload values
-    reloads[i] = (reloads[i] & ~mask) | (value & mask);
+void Timers::writeTarget(int i, uint32_t mask, uint32_t value) {
+    // Write to one of the timer target registers
+    targets[i] = (targets[i] & ~mask) | (value & mask);
 }

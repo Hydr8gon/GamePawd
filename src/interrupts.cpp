@@ -21,6 +21,7 @@
 
 #include "interrupts.h"
 #include "arm9.h"
+#include "core.h"
 
 namespace Interrupts {
     uint32_t requestFlags;
@@ -47,7 +48,7 @@ void Interrupts::checkIrqs() {
 void Interrupts::requestIrq(int i) {
     // Request an interrupt and check if one should trigger
     requestFlags |= (1 << i);
-    checkIrqs();
+    Core::schedule(checkIrqs, 1);
 }
 
 uint32_t Interrupts::readIrqIndex() {
@@ -58,7 +59,7 @@ uint32_t Interrupts::readIrqIndex() {
 void Interrupts::writeIrqEnable(int i, uint32_t mask, uint32_t value) {
     // Enable or disable an interrupt and check if one should trigger
     enableMask = (enableMask & ~(1 << i)) | (!(value & mask & 0x40) << i);
-    checkIrqs();
+    Core::schedule(checkIrqs, 1);
 }
 
 void Interrupts::writeIrqAck(uint32_t mask, uint32_t value) {

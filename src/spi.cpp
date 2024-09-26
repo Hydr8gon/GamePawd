@@ -153,7 +153,7 @@ uint32_t Spi::readData() {
 
     // Ignore reads from the UIC for now
     if (uicMode) {
-        printf("Unimplemented UIC read with command 0x%X\n", command);
+        //printf("Unimplemented UIC read with command 0x%X\n", command);
         return 0x79;
     }
 

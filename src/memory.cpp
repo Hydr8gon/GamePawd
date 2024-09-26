@@ -104,7 +104,9 @@ template <typename T> T Memory::ioRead(uint32_t address) {
         switch (base = address + i) {
             DEF_IO32(0xF0000000, data = 0x41040) // Hardware ID
             DEF_IO32(0xF0000408, data = Timers::readCounter())
+            DEF_IO32(0xF0000410, data = Timers::readControl(0))
             DEF_IO32(0xF0000414, data = Timers::readTimer(0))
+            DEF_IO32(0xF0000420, data = Timers::readControl(1))
             DEF_IO32(0xF0000424, data = Timers::readTimer(1))
             DEF_IO32(0xF00013F0, data = Interrupts::readIrqIndex())
             DEF_IO32(0xF00019F8, data = 0) // Interrupt stub
@@ -163,10 +165,13 @@ template <typename T> void Memory::ioWrite(uint32_t address, T value) {
         uint32_t base, size, data = value >> (i * 8);
         uint32_t mask = (1ULL << ((sizeof(T) - i) * 8)) - 1;
         switch (base = address + i) {
+            DEF_IO32(0xF0000400, Timers::writeTimerScale(IOWR_PARAMS))
+            DEF_IO32(0xF0000404, Timers::writeCountScale(IOWR_PARAMS))
+            DEF_IO32(0xF0000408, Timers::writeCounter(IOWR_PARAMS))
             DEF_IO32(0xF0000410, Timers::writeControl(0, IOWR_PARAMS))
-            DEF_IO32(0xF0000418, Timers::writeReload(0, IOWR_PARAMS))
+            DEF_IO32(0xF0000418, Timers::writeTarget(0, IOWR_PARAMS))
             DEF_IO32(0xF0000420, Timers::writeControl(1, IOWR_PARAMS))
-            DEF_IO32(0xF0000428, Timers::writeReload(1, IOWR_PARAMS))
+            DEF_IO32(0xF0000428, Timers::writeTarget(1, IOWR_PARAMS))
             DEF_IO32(0xF0001208, Interrupts::writeIrqEnable(0, IOWR_PARAMS))
             DEF_IO32(0xF000120C, Interrupts::writeIrqEnable(1, IOWR_PARAMS))
             DEF_IO32(0xF0001210, Interrupts::writeIrqEnable(2, IOWR_PARAMS))

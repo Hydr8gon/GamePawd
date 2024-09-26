@@ -17,7 +17,9 @@
     along with GamePawd. If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <algorithm>
 #include <thread>
+#include <vector>
 
 #include "core.h"
 #include "arm9.h"
@@ -29,15 +31,34 @@
 #include "spi.h"
 #include "timers.h"
 
+struct SchedEvent {
+    void (*task)();
+    uint32_t cycles;
+
+    SchedEvent(void (*task)(), uint32_t cycles): task(task), cycles(cycles) {}
+    bool operator<(const SchedEvent &event) const { return cycles < event.cycles; }
+};
+
 namespace Core {
-    bool running;
     std::thread *thread;
+    bool running;
+
+    std::vector<SchedEvent> events;
+    uint32_t globalCycles;
+    uint32_t arm9Cycles;
 
     void runLoop();
+    void resetCycles();
 }
 
 void Core::reset() {
-    // Reset the emulator
+    // Reset the scheduler
+    events.clear();
+    globalCycles = 0;
+    arm9Cycles = 0;
+    schedule(resetCycles, 0x7FFFFFFF);
+
+    // Reset the rest of the emulator
     Display::reset();
     Dma::reset();
     I2c::reset();
@@ -66,7 +87,35 @@ void Core::stop() {
 void Core::runLoop() {
     // Run the emulator
     while (running) {
-        Arm9::runOpcode();
-        Timers::tick();
+        // Run the ARM9 until the next scheduled task
+        globalCycles = arm9Cycles;
+        while (events[0].cycles > globalCycles)
+            globalCycles = (arm9Cycles += Arm9::runOpcode());
+
+        // Run all tasks that are scheduled now
+        globalCycles = events[0].cycles;
+        while (events[0].cycles == globalCycles) {
+            events[0].task();
+            events.erase(events.begin());
+        }
     }
+}
+
+void Core::resetCycles() {
+    // Reset cycle counts periodically to prevent overflow
+    for (uint32_t i = 0; i < events.size(); i++)
+        events[i].cycles -= globalCycles;
+    Timers::timerCycles -= globalCycles;
+    Timers::countCycles -= globalCycles;
+    arm9Cycles -= globalCycles;
+    globalCycles -= globalCycles;
+    schedule(resetCycles, 0x7FFFFFFF);
+}
+
+uint32_t Core::schedule(void (*task)(), uint32_t cycles) {
+    // Add a task to the scheduler, sorted by least to most cycles until execution
+    SchedEvent event(task, cycles += globalCycles);
+    auto it = std::upper_bound(events.cbegin(), events.cend(), event);
+    events.insert(it, event);
+    return cycles;
 }
