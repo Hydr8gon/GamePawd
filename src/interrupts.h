@@ -26,8 +26,11 @@ namespace Interrupts {
     void checkIrqs();
     void requestIrq(int i);
 
+    uint32_t readIrqEnable(int i);
     uint32_t readIrqIndex();
+    uint32_t readPrioMask();
+    uint32_t readPrioClear();
 
     void writeIrqEnable(int i, uint32_t mask, uint32_t value);
-    void writeIrqAck(uint32_t mask, uint32_t value);
+    void writePrioMask(uint32_t mask, uint32_t value);
 }

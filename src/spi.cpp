@@ -34,12 +34,12 @@ namespace Spi {
     uint32_t address;
     uint8_t flashStatus;
     uint8_t command;
-    bool uicMode;
 
     uint32_t control;
     uint32_t irqFlags;
     uint32_t irqEnable;
     uint32_t readCount;
+    uint32_t devSelect;
 }
 
 void Spi::reset() {
@@ -54,13 +54,13 @@ void Spi::reset() {
     address = 0;
     flashStatus = 0;
     command = 0;
-    uicMode = false;
 
     // Reset the I/O registers
     control = 0;
     irqFlags = 0;
     irqEnable = 0;
     readCount = 0;
+    devSelect = 0;
 
     // Boot from a FLASH dump or a firmware file mapped to FLASH
     if (FILE *file = fopen("flash.bin", "rb")) {
@@ -120,8 +120,8 @@ void Spi::reset() {
         for (uint32_t i = start; i < end; i++)
             Memory::write<uint8_t>(i - start, flashData[i]);
 
-        // Initialize values presumably set by the bootloader
-        Memory::write<uint8_t>(0x3FFFFC, 0x79);
+        // Initialize values set by the bootloader
+        Memory::write<uint8_t>(0x3FFFFC, 0x3F);
     }
 }
 
@@ -151,37 +151,55 @@ uint32_t Spi::readData() {
         Interrupts::requestIrq(6);
     }
 
-    // Ignore reads from the UIC for now
-    if (uicMode) {
-        //printf("Unimplemented UIC read with command 0x%X\n", command);
-        return 0x79;
-    }
+    // Handle the current command for the selected device
+    switch (devSelect) {
+    case 0x1: // FLASH
+        switch (command) {
+        case 0x03: // Read
+            // Return a byte from FLASH and increment the address
+            if (address++ >= flashAddr && address <= flashAddr + flashSize - flashStart)
+                return flashData[flashStart + address - flashAddr - 1];
+            return 0x00;
 
-    // Handle the current FLASH command
-    switch (command) {
-    case 0x03: // Read
-        // Return a byte from FLASH and increment the address
-        if (address++ >= flashAddr && address <= flashAddr + flashSize - flashStart)
-            return flashData[flashStart + address - flashAddr - 1];
-        return 0;
+        case 0x05: // Read status register
+            // Return the current status value
+            return flashStatus;
 
-    case 0x05: // Read status register
-        // Return the current status value
-        return flashStatus;
+        case 0x9F: // Read ID
+            // Return the ID byte for the current address
+            switch (address++) {
+                case 0: return 0x20;
+                case 1: return 0xBA;
+                case 2: return 0x19;
+                default: return 0x00;
+            }
 
-    case 0x9F: // Read ID
-        // Return the ID byte for the current address
-        switch (address++) {
-            case 0: return 0x20;
-            case 1: return 0xBA;
-            case 2: return 0x19;
-            default: return 0x00;
+        default:
+            // Handle unknown commands by doing nothing
+            printf("Unimplemented FLASH read with command 0x%X\n", command);
+            return 0x00;
+        }
+
+    case 0x2: // UIC
+        switch (command) {
+        case 0x05: // Check expansion
+            // Report no expansion device
+            return 0x00;
+
+        case 0x7F: // Firmware status
+            // Report that firmware is installed
+            return 0x3F;
+
+        default:
+            // Handle unknown commands by doing nothing
+            printf("Unimplemented UIC read with command 0x%X\n", command);
+            return 0x00;
         }
 
     default:
-        // Handle unknown commands by doing nothing
-        printf("Unimplemented FLASH read with command 0x%X\n", command);
-        return 0;
+        // Handle invalid devices by doing nothing
+        //printf("SPI read with invalid device selection: 0x%X\n", devSelect);
+        return 0x00;
     }
 }
 
@@ -226,7 +244,7 @@ void Spi::writeData(uint32_t mask, uint32_t value) {
     }
 
     // Handle FLASH commands with special behavior
-    if (uicMode) return;
+    if (devSelect != 0x1) return;
     switch (command) {
     case 0x04: // Write disable
         // Clear the write enable bit
@@ -250,8 +268,19 @@ void Spi::writeReadCount(uint32_t mask, uint32_t value) {
     readCount = (readCount & ~mask) | (value & mask);
 }
 
-void Spi::writeUicGpio(uint32_t mask, uint32_t value) {
+void Spi::writeDevSelect(uint32_t mask, uint32_t value) {
+    // Write to the SPI device select register
+    devSelect = (devSelect & ~mask) | (value & mask);
+}
+
+void Spi::writeGpioFlash(uint32_t mask, uint32_t value) {
+    // Select or deselect the FLASH for SPI transfers
+    if (value & mask & 0x200)
+        devSelect = (devSelect & ~0x1) | ((~value >> 8) & 0x1);
+}
+
+void Spi::writeGpioUic(uint32_t mask, uint32_t value) {
     // Select or deselect the UIC for SPI transfers
     if (value & mask & 0x200)
-        uicMode = (~value & 0x100);
+        devSelect = (devSelect & ~0x2) | ((~value >> 7) & 0x2);
 }

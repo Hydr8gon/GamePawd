@@ -35,5 +35,7 @@ namespace Spi {
     void writeData(uint32_t mask, uint32_t value);
     void writeIrqEnable(uint32_t mask, uint32_t value);
     void writeReadCount(uint32_t mask, uint32_t value);
-    void writeUicGpio(uint32_t mask, uint32_t value);
+    void writeDevSelect(uint32_t mask, uint32_t value);
+    void writeGpioFlash(uint32_t mask, uint32_t value);
+    void writeGpioUic(uint32_t mask, uint32_t value);
 }

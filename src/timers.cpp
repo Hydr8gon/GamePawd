@@ -98,13 +98,13 @@ uint32_t Timers::readTimer(int i) {
 
 void Timers::writeTimerScale(uint32_t mask, uint32_t value) {
     // Write to the timer prescale register and reschedule its next tick
-    timerScale = (timerScale & ~mask) | (timerScale & mask);
+    timerScale = (timerScale & ~mask) | (value & mask);
     timerCycles = Core::schedule(tickTimers, timerScale + 1);
 }
 
 void Timers::writeCountScale(uint32_t mask, uint32_t value) {
     // Write to the counter prescale register and reschedule its next tick
-    countScale = (countScale & ~mask) | (timerScale & mask);
+    countScale = (countScale & ~mask) | (value & mask);
     countCycles = Core::schedule(tickCounter, countScale + 1);
 }
 
