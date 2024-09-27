@@ -114,12 +114,20 @@ void Timers::writeCounter(uint32_t mask, uint32_t value) {
 }
 
 void Timers::writeControl(int i, uint32_t mask, uint32_t value) {
-    // Write to one of the timer control registers
+    // Write to one of the timer control registers and reset the timer if disabled
     controls[i] = (controls[i] & ~mask) | (value & mask);
-
-    // Set the prescale shift and reset the timer if disabled
-    shifts[i] = ((controls[i] >> 4) & 0x7) + 1;
     if (~controls[i] & 0x2) timers[i] = 0;
+
+    // Set the prescale shift and adjust the timer if it changed
+    uint8_t shift = ((controls[i] >> 4) & 0x7) + 1;
+    if (shifts[i] == shift) return;
+    timers[i] = (timers[i] >> shifts[i]) << shift;
+    shifts[i] = shift;
+}
+
+void Timers::writeTimer(int i, uint32_t mask, uint32_t value) {
+    // Write one of the current timer values, adjusted for prescaling
+    timers[i] = (((timers[i] >> shifts[i]) & ~mask) | (value & mask)) << shifts[i];
 }
 
 void Timers::writeTarget(int i, uint32_t mask, uint32_t value) {

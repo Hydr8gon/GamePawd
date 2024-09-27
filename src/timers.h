@@ -35,5 +35,6 @@ namespace Timers {
     void writeCountScale(uint32_t mask, uint32_t value);
     void writeCounter(uint32_t mask, uint32_t value);
     void writeControl(int i, uint32_t mask, uint32_t value);
+    void writeTimer(int i, uint32_t mask, uint32_t value);
     void writeTarget(int i, uint32_t mask, uint32_t value);
 }

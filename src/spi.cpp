@@ -97,7 +97,7 @@ void Spi::reset() {
         fclose(file);
 
         // Determine start and end offsets of the ARM9 code
-        uint32_t start = 0, end = 0;
+        uint32_t start = -1, end = 0;
         for (uint32_t i = 8; i < flashSize; i += 4) {
             // Find the start of the partition table
             uint8_t *data = &flashData[i];
@@ -108,7 +108,7 @@ void Spi::reset() {
             }
 
             // Find the ARM9 code entry and parse offset and length
-            if (start && data[0] == 'L' && data[1] == 'V' && data[2] == 'C' && data[3] == '_') {
+            if (start != -1 && data[0] == 'L' && data[1] == 'V' && data[2] == 'C' && data[3] == '_') {
                 start += (data[-8] | (data[-7] << 8) | (data[-6] << 16) | (data[-5] << 24));
                 end = start + (data[-4] | (data[-3] << 8) | (data[-2] << 16) | (data[-1] << 24));
                 printf("Found firmware code at 0x%X with size 0x%X\n", start, end - start);
@@ -136,8 +136,8 @@ uint32_t Spi::readIrqFlags() {
 }
 
 uint32_t Spi::readFifoStat() {
-    // Report a word in the read FIFO during transfers, and an empty write FIFO always
-    return ((readCount > 0) << 8) | 0x10;
+    // Report words in the read FIFO during transfers, and an empty write FIFO always
+    return (std::min(readCount, 0x10U) << 8) | 0x10;
 }
 
 uint32_t Spi::readData() {
@@ -145,8 +145,8 @@ uint32_t Spi::readData() {
     if (!readCount || (~control & 0x2)) return 0;
     readCount--;
 
-    // Trigger a read interrupt instantly if enabled
-    if (irqEnable & 0x40) {
+    // Trigger a read interrupt if all remaining data fits in the FIFO
+    if ((irqEnable & 0x40) && readCount <= 0x10) {
         irqFlags |= 0x40;
         Interrupts::requestIrq(6);
     }
@@ -266,6 +266,12 @@ void Spi::writeIrqEnable(uint32_t mask, uint32_t value) {
 void Spi::writeReadCount(uint32_t mask, uint32_t value) {
     // Write to the SPI read count register
     readCount = (readCount & ~mask) | (value & mask);
+
+    // Trigger a read interrupt instantly if all data fits in the FIFO
+    if ((irqEnable & 0x40) && readCount <= 0x10) {
+        irqFlags |= 0x40;
+        Interrupts::requestIrq(6);
+    }
 }
 
 void Spi::writeDevSelect(uint32_t mask, uint32_t value) {
