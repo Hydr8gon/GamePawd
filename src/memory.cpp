@@ -158,19 +158,19 @@ template <typename T> T Memory::ioRead(uint32_t address) {
             DEF_IO32(0xF0005804, data = I2c::readIrqEnable())
             DEF_IO32(0xF0005C00, data = 0x1) // I2C stub
             DEF_IO32(0xF0005C04, data = I2c::readData(0))
-            DEF_IO32(0xF0005C08, data = 0x20) // I2C stub
+            DEF_IO32(0xF0005C08, data = I2c::readControl(0))
             DEF_IO32(0xF0005C18, data = I2c::readStatus(0))
             DEF_IO32(0xF0006000, data = 0x1) // I2C stub
             DEF_IO32(0xF0006004, data = I2c::readData(1))
-            DEF_IO32(0xF0006008, data = 0x20) // I2C stub
+            DEF_IO32(0xF0006008, data = I2c::readControl(1))
             DEF_IO32(0xF0006018, data = I2c::readStatus(1))
             DEF_IO32(0xF0006400, data = 0x1) // I2C stub
             DEF_IO32(0xF0006404, data = I2c::readData(2))
-            DEF_IO32(0xF0006408, data = 0x20) // I2C stub
+            DEF_IO32(0xF0006408, data = I2c::readControl(2))
             DEF_IO32(0xF0006418, data = I2c::readStatus(2))
             DEF_IO32(0xF0006800, data = 0x1) // I2C stub
             DEF_IO32(0xF0006804, data = I2c::readData(3))
-            DEF_IO32(0xF0006808, data = 0x20) // I2C stub
+            DEF_IO32(0xF0006808, data = I2c::readControl(3))
             DEF_IO32(0xF0006818, data = I2c::readStatus(3))
 
         default:

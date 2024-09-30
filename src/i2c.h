@@ -27,6 +27,7 @@ namespace I2c {
     uint32_t readIrqFlags();
     uint32_t readIrqEnable();
     uint32_t readData(int i);
+    uint32_t readControl(int i);
     uint32_t readStatus(int i);
 
     void writeIrqEnable(uint32_t mask, uint32_t value);
