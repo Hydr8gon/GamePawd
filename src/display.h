@@ -25,6 +25,14 @@ namespace Display {
     void reset();
     uint32_t *getBuffer();
 
+    uint32_t readFbWidth();
+    uint32_t readFbHeight();
+    uint32_t readFbAddr();
+
+    void writeFbXOfs(uint32_t mask, uint32_t value);
+    void writeFbWidth(uint32_t mask, uint32_t value);
+    void writeFbYOfs(uint32_t mask, uint32_t value);
+    void writeFbHeight(uint32_t mask, uint32_t value);
     void writeFbAddr(uint32_t mask, uint32_t value);
     void writePalAddr(uint32_t mask, uint32_t value);
     void writePalData(uint32_t mask, uint32_t value);

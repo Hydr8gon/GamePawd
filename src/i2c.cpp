@@ -80,7 +80,7 @@ uint32_t I2c::readData(int i) {
     switch (uint8_t id = deviceId >> 1) {
     case 0x39: // LCD
         switch (command) {
-        case 0xBF: // Get ID
+        case 0xBF: // Read ID
             // Return the ID of a Panasonic LCD
             return (dataCount == 4) ? 0x02 : 0x00;
 
@@ -92,13 +92,11 @@ uint32_t I2c::readData(int i) {
 
     case 0x21: // Camera
         switch (command) {
-        case 0x0A: // Get ID A
-            // Return the first byte of the camera ID
-            return 0x77;
-
-        case 0x0B: // Get ID B
-            // Return the second byte of the camera ID
-            return 0x42;
+            case 0x0A: return 0x77; // Product ID A
+            case 0x0B: return 0x42; // Product ID B
+            case 0x11: return 0x01; // Clock divider
+            case 0x9C: return 0x1D; // Gamma Y-coord A
+            case 0x9D: return 0x2E; // Gamma Y-coord B
 
         default:
             // Handle unknown commands by doing nothing

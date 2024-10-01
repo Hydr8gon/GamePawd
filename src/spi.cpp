@@ -25,6 +25,7 @@
 #include "memory.h"
 
 namespace Spi {
+    uint8_t eeprom[0x800];
     uint8_t *flashData;
     uint32_t flashAddr;
     uint32_t flashStart;
@@ -34,6 +35,7 @@ namespace Spi {
     uint32_t address;
     uint8_t flashStatus;
     uint8_t command;
+    uint8_t uicFwStatus;
 
     uint32_t control;
     uint32_t irqFlags;
@@ -54,6 +56,7 @@ void Spi::reset() {
     address = 0;
     flashStatus = 0;
     command = 0;
+    uicFwStatus = 0x3F;
 
     // Reset the I/O registers
     control = 0;
@@ -61,6 +64,12 @@ void Spi::reset() {
     irqEnable = 0;
     readCount = 0;
     devSelect = 0;
+
+    // Load UIC EEPROM data from a file (for now?)
+    if (FILE *file = fopen("eeprom.bin", "rb")) {
+        fread(eeprom, sizeof(uint8_t), sizeof(eeprom), file);
+        fclose(file);
+    }
 
     // Boot from a FLASH dump or a firmware file mapped to FLASH
     if (FILE *file = fopen("flash.bin", "rb")) {
@@ -182,18 +191,22 @@ uint32_t Spi::readData() {
 
     case 0x2: // UIC
         switch (command) {
+        case 0x03: // Read EEPROM
+            // Return a byte from EEPROM and increment the address
+            return eeprom[(((address += 0x10000) >> 16) - 0x1101) & 0x7FF];
+
         case 0x05: // Check expansion
             // Report no expansion device
             return 0x00;
 
         case 0x7F: // Firmware status
-            // Report that firmware is installed
-            return 0x3F;
+            // Return the current firmware status
+            return uicFwStatus;
 
         default:
             // Handle unknown commands by doing nothing
             printf("Unimplemented UIC read with command 0x%X\n", command);
-            return 0x00;
+            return 0x79;
         }
 
     default:
@@ -243,18 +256,28 @@ void Spi::writeData(uint32_t mask, uint32_t value) {
         Interrupts::requestIrq(6);
     }
 
-    // Handle FLASH commands with special behavior
-    if (devSelect != 0x1) return;
-    switch (command) {
-    case 0x04: // Write disable
-        // Clear the write enable bit
-        flashStatus &= ~0x2;
-        break;
+    // Handle commands with special behavior
+    switch (devSelect) {
+    case 0x1: // FLASH
+        switch (command) {
+        case 0x04: // Write disable
+            // Clear the write enable bit
+            flashStatus &= ~0x2;
+            return;
 
-    case 0x06: // Write enable
-        // Set the write enable bit
-        flashStatus |= 0x2;
-        break;
+        case 0x06: // Write enable
+            // Set the write enable bit
+            flashStatus |= 0x2;
+            return;
+        }
+
+    case 0x2: // UIC
+        switch (command) {
+        case 0x09: // Begin update
+            // Change the firmware status to be ready for update
+            uicFwStatus = 0x79;
+            return;
+        }
     }
 }
 

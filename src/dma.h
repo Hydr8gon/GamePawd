@@ -32,7 +32,12 @@ namespace Dma {
     void writeSpiCount(uint32_t mask, uint32_t value);
     void writeSpiAddress(uint32_t mask, uint32_t value);
     void writeEnable(int i, uint32_t mask, uint32_t value);
+    void writeControl(int i, uint32_t mask, uint32_t value);
+    void writeChunkSize(int i, uint32_t mask, uint32_t value);
+    void writeSrcStride(int i, uint32_t mask, uint32_t value);
+    void writeDstStride(int i, uint32_t mask, uint32_t value);
     void writeCount(int i, uint32_t mask, uint32_t value);
     void writeSrcAddr(int i, uint32_t mask, uint32_t value);
     void writeDstAddr(int i, uint32_t mask, uint32_t value);
+    void writeSimpFill(int i, uint32_t mask, uint32_t value);
 }

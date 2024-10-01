@@ -17,6 +17,7 @@
     along with GamePawd. If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include <algorithm>
 #include <cstring>
 #include <mutex>
 #include <queue>
@@ -33,6 +34,10 @@ namespace Display {
     std::mutex mutex;
 
     uint32_t palette[0x100];
+    uint32_t fbXOffset;
+    uint32_t fbWidth;
+    uint32_t fbYOffset;
+    uint32_t fbHeight;
     uint32_t fbAddress;
     uint8_t palAddress;
 
@@ -42,6 +47,10 @@ namespace Display {
 void Display::reset() {
     // Reset the palette and registers
     memset(palette, 0, sizeof(palette));
+    fbXOffset = 0;
+    fbWidth = 0;
+    fbYOffset = 0;
+    fbHeight = 0;
     fbAddress = 0;
     palAddress = 0;
 
@@ -62,11 +71,21 @@ uint32_t *Display::getBuffer() {
 }
 
 void Display::drawFrame() {
-    // Build a basic framebuffer with a lot of assumptions
+    // Create a new framebuffer and clear it
     uint32_t *buffer = new uint32_t[854 * 480];
-    for (int y = 0; y < 480; y++)
-        for (int x = 0; x < 854; x++)
-            buffer[y * 854 + x] = palette[Memory::read<uint8_t>(fbAddress + y * 854 + x)];
+    memset(buffer, 0, 854 * 480 * 4);
+
+    // Render a buffer from memory with the given size and offset
+    uint32_t w = std::min(fbWidth, 854U), h = std::min(fbHeight, 480U);
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+            uint32_t fbY = y + fbYOffset - 8;
+            if (fbY >= 480) break;
+            uint32_t fbX = x + fbXOffset - 96;
+            if (fbX >= 854) continue;
+            buffer[fbY * 854 + fbX] = palette[Memory::read<uint8_t>(fbAddress + y * fbWidth + x)];
+        }
+    }
 
     // Queue the buffer to be displayed once there's room
     mutex.lock();
@@ -81,6 +100,41 @@ void Display::drawFrame() {
     // Trigger a V-blank interrupt and schedule the next one
     Interrupts::requestIrq(22);
     Core::schedule(drawFrame, 108000000 / 60);
+}
+
+uint32_t Display::readFbWidth() {
+    // Read from the framebuffer width register
+    return fbWidth;
+}
+
+uint32_t Display::readFbHeight() {
+    // Read from the framebuffer height register
+    return fbHeight;
+}
+
+uint32_t Display::readFbAddr() {
+    // Read from the framebuffer address register
+    return fbAddress;
+}
+
+void Display::writeFbXOfs(uint32_t mask, uint32_t value) {
+    // Write to the framebuffer X-offset register
+    fbXOffset = (fbXOffset & ~mask) | (value & mask);
+}
+
+void Display::writeFbWidth(uint32_t mask, uint32_t value) {
+    // Write to the framebuffer width register
+    fbWidth = (fbWidth & ~mask) | (value & mask);
+}
+
+void Display::writeFbYOfs(uint32_t mask, uint32_t value) {
+    // Write to the framebuffer X-offset register
+    fbYOffset = (fbYOffset & ~mask) | (value & mask);
+}
+
+void Display::writeFbHeight(uint32_t mask, uint32_t value) {
+    // Write to the framebuffer height register
+    fbHeight = (fbHeight & ~mask) | (value & mask);
 }
 
 void Display::writeFbAddr(uint32_t mask, uint32_t value) {

@@ -119,7 +119,7 @@ void Timers::writeControl(int i, uint32_t mask, uint32_t value) {
     if (~controls[i] & 0x2) timers[i] = 0;
 
     // Set the prescale shift and adjust the timer if it changed
-    uint8_t shift = ((controls[i] >> 4) & 0x7) + 1;
+    uint8_t shift = (controls[i] & 0x1) ? (((controls[i] >> 4) & 0x7) + 1) : 0;
     if (shifts[i] == shift) return;
     timers[i] = (timers[i] >> shifts[i]) << shift;
     shifts[i] = shift;
