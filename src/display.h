@@ -25,7 +25,9 @@ namespace Display {
     void reset();
     uint32_t *getBuffer();
 
+    uint32_t readFbXOfs();
     uint32_t readFbWidth();
+    uint32_t readFbYOfs();
     uint32_t readFbHeight();
     uint32_t readFbAddr();
 

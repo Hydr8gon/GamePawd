@@ -199,6 +199,22 @@ uint32_t Spi::readData() {
             // Report no expansion device
             return 0x00;
 
+        case 0x07: // Scan input
+            // Stub to avoid getting stuck
+            return (address++ == 0x7F) ? 0xFF : 0x00;
+
+        case 0x0B: // Firmware version
+            // Return the version byte for the current address
+            switch (address++) {
+                case 0: return 0x28;
+                case 3: return 0x58;
+                default: return 0x00;
+            }
+
+        case 0x13: // Unknown
+            // Stub to avoid getting stuck
+            return 0x01;
+
         case 0x7F: // Firmware status
             // Return the current firmware status
             return uicFwStatus;

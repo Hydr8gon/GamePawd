@@ -102,9 +102,19 @@ void Display::drawFrame() {
     Core::schedule(drawFrame, 108000000 / 60);
 }
 
+uint32_t Display::readFbXOfs() {
+    // Read from the framebuffer X-offset register
+    return fbXOffset;
+}
+
 uint32_t Display::readFbWidth() {
     // Read from the framebuffer width register
     return fbWidth;
+}
+
+uint32_t Display::readFbYOfs() {
+    // Read from the framebuffer Y-offset register
+    return fbYOffset;
 }
 
 uint32_t Display::readFbHeight() {
@@ -128,7 +138,7 @@ void Display::writeFbWidth(uint32_t mask, uint32_t value) {
 }
 
 void Display::writeFbYOfs(uint32_t mask, uint32_t value) {
-    // Write to the framebuffer X-offset register
+    // Write to the framebuffer Y-offset register
     fbYOffset = (fbYOffset & ~mask) | (value & mask);
 }
 

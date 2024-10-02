@@ -172,7 +172,10 @@ template <typename T> T Memory::ioRead(uint32_t address) {
             DEF_IO32(0xF0006804, data = I2c::readData(3))
             DEF_IO32(0xF0006808, data = I2c::readControl(3))
             DEF_IO32(0xF0006818, data = I2c::readStatus(3))
+            DEF_IO32(0xF0009410, data = Display::readFbXOfs()) // Stub
+            DEF_IO32(0xF0009460, data = Display::readFbXOfs())
             DEF_IO32(0xF0009464, data = Display::readFbWidth())
+            DEF_IO32(0xF0009468, data = Display::readFbYOfs())
             DEF_IO32(0xF000946C, data = Display::readFbHeight())
             DEF_IO32(0xF0009474, data = Display::readFbAddr())
 

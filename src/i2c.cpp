@@ -78,15 +78,13 @@ uint32_t I2c::readData(int i) {
 
     // Handle the current command for the selected device
     switch (uint8_t id = deviceId >> 1) {
-    case 0x39: // LCD
+    case 0x18: // Amplifier
         switch (command) {
-        case 0xBF: // Read ID
-            // Return the ID of a Panasonic LCD
-            return (dataCount == 4) ? 0x02 : 0x00;
+            case 0x30: return 0x20; // Stub
 
         default:
             // Handle unknown commands by doing nothing
-            printf("Unimplemented LCD read with command 0x%X\n", command);
+            printf("Unimplemented amplifier read with command 0x%X\n", command);
             return 0x00;
         }
 
@@ -101,6 +99,18 @@ uint32_t I2c::readData(int i) {
         default:
             // Handle unknown commands by doing nothing
             printf("Unimplemented camera read with command 0x%X\n", command);
+            return 0x00;
+        }
+
+    case 0x39: // LCD
+        switch (command) {
+        case 0xBF: // Read ID
+            // Return the ID of a Panasonic LCD
+            return (dataCount == 4) ? 0x02 : 0x00;
+
+        default:
+            // Handle unknown commands by doing nothing
+            printf("Unimplemented LCD read with command 0x%X\n", command);
             return 0x00;
         }
 
