@@ -27,6 +27,15 @@
 #include "interrupts.h"
 #include "spi.h"
 #include "timers.h"
+#include "wifi.h"
+
+// Defines a 16-bit register in an I/O switch statement
+#define DEF_IO16(addr, func) \
+case addr + 0: case addr + 1: \
+    base -= addr; \
+    size = 2; \
+    func; \
+    break;
 
 // Defines a 32-bit register in an I/O switch statement
 #define DEF_IO32(addr, func) \
@@ -67,7 +76,7 @@ template <typename T> T Memory::read(uint32_t address) {
             value |= data[i] << (i * 8);
         return value;
     }
-    else if ((address >> 28) == 0xF) {
+    else if ((address >> 28) >= 0xE) {
         return ioRead<T>(address);
     }
 
@@ -87,7 +96,7 @@ template <typename T> void Memory::write(uint32_t address, T value) {
             data[i] = value >> (i * 8);
         return;
     }
-    else if ((address >> 28) == 0xF) {
+    else if ((address >> 28) >= 0xE) {
         return ioWrite<T>(address, value);
     }
 
@@ -96,12 +105,24 @@ template <typename T> void Memory::write(uint32_t address, T value) {
 }
 
 template <typename T> T Memory::ioRead(uint32_t address) {
+    // Mirror the SDIO register area every 256 bytes
+    if ((address & 0xFFFF0000) == 0xE0010000)
+        address = 0xE0010000 | (address & 0xFF);
+
     // Read a value from one or more I/O registers
     T value = 0;
     for (uint32_t i = 0; i < sizeof(T);) {
         // Load data from a register
         uint32_t base, size, data;
         switch (base = address + i) {
+            DEF_IO32(0xE0010010, data = Wifi::readResponse(0))
+            DEF_IO32(0xE0010014, data = Wifi::readResponse(1))
+            DEF_IO32(0xE0010018, data = Wifi::readResponse(2))
+            DEF_IO32(0xE001001C, data = Wifi::readResponse(3))
+            DEF_IO16(0xE001002C, data = Wifi::readClockCtrl())
+            DEF_IO16(0xE0010030, data = Wifi::readIrqFlags())
+            DEF_IO32(0xE0010034, data = Wifi::readIrqEnable())
+            DEF_IO32(0xE0010040, data = 0x30) // WiFi capabilities
             DEF_IO32(0xF0000000, data = 0x41040) // Hardware ID
             DEF_IO32(0xF0000408, data = Timers::readCounter())
             DEF_IO32(0xF0000410, data = Timers::readControl(0))
@@ -199,12 +220,21 @@ template <typename T> T Memory::ioRead(uint32_t address) {
 }
 
 template <typename T> void Memory::ioWrite(uint32_t address, T value) {
+    // Mirror the SDIO register area every 256 bytes
+    if ((address & 0xFFFF0000) == 0xE0010000)
+        address = 0xE0010000 | (address & 0xFF);
+
     // Write a value to one or more I/O registers
     for (uint32_t i = 0; i < sizeof(T);) {
         // Store data to a register
         uint32_t base, size, data = value >> (i * 8);
         uint32_t mask = (1ULL << ((sizeof(T) - i) * 8)) - 1;
         switch (base = address + i) {
+            DEF_IO32(0xE0010008, Wifi::writeArgs(IOWR_PARAMS))
+            DEF_IO16(0xE001000E, Wifi::writeCommand(IOWR_PARAMS))
+            DEF_IO16(0xE001002C, Wifi::writeClockCtrl(IOWR_PARAMS))
+            DEF_IO16(0xE0010030, Wifi::writeIrqFlags(IOWR_PARAMS))
+            DEF_IO16(0xE0010034, Wifi::writeIrqEnable(IOWR_PARAMS))
             DEF_IO32(0xF0000400, Timers::writeTimerScale(IOWR_PARAMS))
             DEF_IO32(0xF0000404, Timers::writeCountScale(IOWR_PARAMS))
             DEF_IO32(0xF0000408, Timers::writeCounter(IOWR_PARAMS))

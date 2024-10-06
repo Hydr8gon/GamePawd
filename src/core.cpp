@@ -30,6 +30,7 @@
 #include "memory.h"
 #include "spi.h"
 #include "timers.h"
+#include "wifi.h"
 
 struct SchedEvent {
     void (*task)();
@@ -66,6 +67,7 @@ void Core::reset() {
     Memory::reset();
     Spi::reset();
     Timers::reset();
+    Wifi::reset();
     Arm9::reset();
 }
 
