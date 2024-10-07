@@ -42,6 +42,8 @@ namespace Spi {
     uint32_t irqEnable;
     uint32_t readCount;
     uint32_t devSelect;
+
+    void calcCrc16(uint8_t *data, uint32_t size);
 }
 
 void Spi::reset() {
@@ -65,11 +67,13 @@ void Spi::reset() {
     readCount = 0;
     devSelect = 0;
 
-    // Load UIC EEPROM data from a file (for now?)
-    if (FILE *file = fopen("eeprom.bin", "rb")) {
-        fread(eeprom, sizeof(uint8_t), sizeof(eeprom), file);
-        fclose(file);
-    }
+    // Build a barebones UIC EEPROM with essential data
+    eeprom[0x100] = 0x00; // Board version
+    calcCrc16(&eeprom[0x100], 0x1);
+    eeprom[0x103] = 0x01; // Region
+    calcCrc16(&eeprom[0x103], 0x1);
+    eeprom[0x256] = 0x01; // Language bank
+    calcCrc16(&eeprom[0x256], 0x4);
 
     // Boot from a FLASH dump or a firmware file mapped to FLASH
     if (FILE *file = fopen("flash.bin", "rb")) {
@@ -132,6 +136,20 @@ void Spi::reset() {
         // Initialize values set by the bootloader
         Memory::write<uint8_t>(0x3FFFFC, 0x3F);
     }
+}
+
+void Spi::calcCrc16(uint8_t *data, uint32_t size) {
+    // Calculate a CRC16 for the given data
+    uint16_t crc = 0xFFFF;
+    for (int i = 0; i < size; i++) {
+        crc ^= data[i];
+        for (int j = 0; j < 8; j++)
+            crc = (crc & 0x1) ? ((crc >> 1) ^ 0x8408) : (crc >> 1);
+    }
+
+    // Append the checksum to the end of the data
+    data[size + 0] = crc >> 0;
+    data[size + 1] = crc >> 8;
 }
 
 uint32_t Spi::readControl() {
