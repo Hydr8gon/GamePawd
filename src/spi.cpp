@@ -186,7 +186,7 @@ uint32_t Spi::readData() {
             // Return a byte from FLASH and increment the address
             if (address++ >= flashAddr && address <= flashAddr + flashSize - flashStart)
                 return flashData[flashStart + address - flashAddr - 1];
-            return 0x00;
+            return (address == 0x1100001) ? 0x01 : 0x00;
 
         case 0x05: // Read status register
             // Return the current status value

@@ -25,6 +25,7 @@ namespace Wifi {
     void reset();
 
     uint32_t readResponse(int i);
+    uint32_t readBufferData();
     uint16_t readClockCtrl();
     uint32_t readIrqFlags();
     uint32_t readIrqEnable();

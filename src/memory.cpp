@@ -119,11 +119,12 @@ template <typename T> T Memory::ioRead(uint32_t address) {
             DEF_IO32(0xE0010014, data = Wifi::readResponse(1))
             DEF_IO32(0xE0010018, data = Wifi::readResponse(2))
             DEF_IO32(0xE001001C, data = Wifi::readResponse(3))
+            DEF_IO32(0xE0010020, data = Wifi::readBufferData())
             DEF_IO16(0xE001002C, data = Wifi::readClockCtrl())
             DEF_IO16(0xE0010030, data = Wifi::readIrqFlags())
             DEF_IO32(0xE0010034, data = Wifi::readIrqEnable())
-            DEF_IO32(0xE0010040, data = 0x30) // WiFi capabilities
-            DEF_IO32(0xF0000000, data = 0x41040) // Hardware ID
+            DEF_IO32(0xE0010040, data = 0x69EF30B0) // WiFi capabilities
+            DEF_IO32(0xF0000000, data = 0x00041040) // Hardware ID
             DEF_IO32(0xF0000408, data = Timers::readCounter())
             DEF_IO32(0xF0000410, data = Timers::readControl(0))
             DEF_IO32(0xF0000414, data = Timers::readTimer(0))
