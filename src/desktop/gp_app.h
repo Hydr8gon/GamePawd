@@ -21,7 +21,12 @@
 
 #include "gp_frame.h"
 
+#define MAX_KEYS 16
+
 class gpApp: public wxApp {
+public:
+    static int keyBinds[MAX_KEYS];
+
 private:
     gpFrame *frame;
     wxTimer *timer;

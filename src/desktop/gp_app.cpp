@@ -27,6 +27,8 @@ wxBEGIN_EVENT_TABLE(gpApp, wxApp)
 EVT_TIMER(UPDATE, gpApp::update)
 wxEND_EVENT_TABLE()
 
+int gpApp::keyBinds[] = { 'S', 'W', 'D', 'A', 'I', 'O', 'K', 'L', 'V', 'B', 'G', 'H', 'P', 'Q', '0', '1' };
+
 bool gpApp::OnInit() {
     // Create the app's frame
     SetAppName("GamePawd");

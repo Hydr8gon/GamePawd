@@ -20,6 +20,7 @@
 #include "gp_canvas.h"
 #include "gp_app.h"
 #include "../display.h"
+#include "../spi.h"
 
 #ifdef _WIN32
 #include <GL/gl.h>
@@ -29,6 +30,8 @@
 wxBEGIN_EVENT_TABLE(gpCanvas, wxGLCanvas)
 EVT_PAINT(gpCanvas::draw)
 EVT_SIZE(gpCanvas::resize)
+EVT_KEY_DOWN(gpCanvas::pressKey)
+EVT_KEY_UP(gpCanvas::releaseKey)
 wxEND_EVENT_TABLE()
 
 gpCanvas::gpCanvas(gpFrame *frame): wxGLCanvas(frame, wxID_ANY, nullptr), frame(frame) {
@@ -120,4 +123,18 @@ void gpCanvas::resize(wxSizeEvent &event) {
         x = 0;
         y = (size.y - height) / 2;
     }
+}
+
+void gpCanvas::pressKey(wxKeyEvent &event) {
+    // Trigger a key press if a mapped key was pressed
+    for (int i = 0; i < MAX_KEYS; i++)
+        if (event.GetKeyCode() == gpApp::keyBinds[i])
+            Spi::pressKey(i);
+}
+
+void gpCanvas::releaseKey(wxKeyEvent &event) {
+    // Trigger a key release if a mapped key was released
+    for (int i = 0; i < MAX_KEYS; i++)
+        if (event.GetKeyCode() == gpApp::keyBinds[i])
+            Spi::releaseKey(i);
 }

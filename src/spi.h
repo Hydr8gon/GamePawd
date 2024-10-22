@@ -23,6 +23,8 @@
 
 namespace Spi {
     void reset();
+    void pressKey(int key);
+    void releaseKey(int key);
 
     uint32_t readControl();
     uint32_t readIrqFlags();

@@ -107,12 +107,24 @@ uint8_t Wifi::readByte(uint8_t func, uint32_t address, bool first) {
         // Read a byte from a register
         switch (address) {
         case 0x18000000: case 0x18000001: case 0x18000002: case 0x18000003: // Chip ID
-            // Return a byte of the 32-bit chip ID
+            // Return a byte of the 32-bit chip ID register
             return 0x16914319 >> ((address & 0x3) * 8);
 
+        case 0x18000004: case 0x18000005: case 0x18000006: case 0x18000007: // Chip capabilities
+            // Return a byte of the 32-bit chip capabilities register
+            return 0x10480009 >> ((address & 0x3) * 8);
+
         case 0x180000FC: case 0x180000FD: case 0x180000FE: case 0x180000FF: // EROM address
-            // Return a byte of the 32-bit EROM address
+            // Return a byte of the 32-bit EROM address register
             return 0x18109000 >> ((address & 0x3) * 8);
+
+        case 0x18000604: case 0x18000605: case 0x18000606: case 0x18000607: // PMU capabilities
+            // Return a byte of the 32-bit PMU capabilities register
+            return 0x19CC3607 >> ((address & 0x3) * 8);
+
+        case 0x18004000: case 0x18004001: case 0x18004002: case 0x18004003: // SOCRAM info
+            // Return a byte of the 32-bit SOCRAM info register
+            return 0x00258033 >> ((address & 0x3) * 8);
 
         default:
             // Handle unknown reads by returning nothing

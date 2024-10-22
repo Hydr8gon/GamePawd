@@ -33,6 +33,7 @@ namespace Spi {
 
     uint32_t writeCount;
     uint32_t address;
+    uint16_t buttons;
     uint8_t flashStatus;
     uint8_t command;
     uint8_t uicFwStatus;
@@ -152,6 +153,16 @@ void Spi::calcCrc16(uint8_t *data, uint32_t size) {
     data[size + 1] = crc >> 8;
 }
 
+void Spi::pressKey(int key) {
+    // Set a button bit to press it
+    buttons |= (1 << key);
+}
+
+void Spi::releaseKey(int key) {
+    // Clear a button bit to release it
+    buttons &= ~(1 << key);
+}
+
 uint32_t Spi::readControl() {
     // Read from the SPI control register
     return control;
@@ -218,8 +229,13 @@ uint32_t Spi::readData() {
             return 0x00;
 
         case 0x07: // Scan input
-            // Stub to avoid getting stuck
-            return (address++ == 0x7F) ? 0xFF : 0x00;
+            // Get the basic button bitmask and stub the rest
+            switch (address++) {
+                case 0x02: return buttons >> 0;
+                case 0x03: return buttons >> 8;
+                case 0x7F: return 0xFF;
+                default: return 0x00;
+            }
 
         case 0x0B: // Firmware version
             // Return the version byte for the current address

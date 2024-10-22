@@ -332,7 +332,9 @@ template <typename T> void Memory::ioWrite(uint32_t address, T value) {
             DEF_IO32(0xF0009464, Display::writeFbWidth(IOWR_PARAMS))
             DEF_IO32(0xF0009468, Display::writeFbYOfs(IOWR_PARAMS))
             DEF_IO32(0xF000946C, Display::writeFbHeight(IOWR_PARAMS))
+            DEF_IO32(0xF0009470, Display::writeFbStride(IOWR_PARAMS))
             DEF_IO32(0xF0009474, Display::writeFbAddr(IOWR_PARAMS))
+            DEF_IO32(0xF00094B0, Display::writePixelFmt(IOWR_PARAMS))
             DEF_IO32(0xF0009500, Display::writePalAddr(IOWR_PARAMS))
             DEF_IO32(0xF0009504, Display::writePalData(IOWR_PARAMS))
 

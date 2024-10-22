@@ -18,6 +18,7 @@
 */
 
 #include <algorithm>
+#include <cstdio>
 #include <cstring>
 #include <mutex>
 #include <queue>
@@ -38,7 +39,9 @@ namespace Display {
     uint32_t fbWidth;
     uint32_t fbYOffset;
     uint32_t fbHeight;
+    uint32_t fbStride;
     uint32_t fbAddress;
+    uint32_t pixelFormat;
     uint8_t palAddress;
 
     void drawFrame();
@@ -51,7 +54,9 @@ void Display::reset() {
     fbWidth = 0;
     fbYOffset = 0;
     fbHeight = 0;
+    fbStride = 0;
     fbAddress = 0;
+    pixelFormat = 0;
     palAddress = 0;
 
     // Schedule initial tasks
@@ -75,16 +80,45 @@ void Display::drawFrame() {
     uint32_t *buffer = new uint32_t[854 * 480];
     memset(buffer, 0, 854 * 480 * 4);
 
-    // Render a buffer from memory with the given size and offset
+    // Render a buffer from memory with the current parameters
     uint32_t w = std::min(fbWidth, 854U), h = std::min(fbHeight, 480U);
-    for (int y = 0; y < h; y++) {
-        for (int x = 0; x < w; x++) {
-            uint32_t fbY = y + fbYOffset - 8;
-            if (fbY >= 480) break;
-            uint32_t fbX = x + fbXOffset - 96;
-            if (fbX >= 854) continue;
-            buffer[fbY * 854 + fbX] = palette[Memory::read<uint8_t>(fbAddress + y * fbWidth + x)];
+    switch (uint8_t fmt = pixelFormat & 0x3) {
+    case 0: // 8-bit palette
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                // Check bounds for the current pixel
+                uint32_t fbY, fbX;
+                if ((fbY = y + fbYOffset - 8) >= 480) break;
+                if ((fbX = x + fbXOffset - 96) >= 854) continue;
+
+                // Look up a color with an 8-bit palette index
+                buffer[fbY * 854 + fbX] = palette[Memory::read<uint8_t>(fbAddress + y * fbStride + x)];
+            }
         }
+        break;
+
+    case 2: // 16-bit ARGB
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                // Check bounds for the current pixel
+                uint32_t fbY, fbX;
+                if ((fbY = y + fbYOffset - 8) >= 480) break;
+                if ((fbX = x + fbXOffset - 96) >= 854) continue;
+
+                // Convert a 16-bit ARGB color to 32-bit ABGR
+                uint16_t color = Memory::read<uint16_t>(fbAddress + (y * fbStride + x) * 2);
+                uint8_t r = ((color >> 10) & 0x1F) * 0xFF / 0x1F;
+                uint8_t g = ((color >> 5) & 0x1F) * 0xFF / 0x1F;
+                uint8_t b = ((color >> 0) & 0x1F) * 0xFF / 0x1F;
+                buffer[fbY * 854 + fbX] = 0xFF000000 | (b << 16) | (g << 8) | r;
+            }
+        }
+        break;
+
+    default:
+        // Handle unimplemented formats by drawing nothing
+        printf("Unimplemented framebuffer format: %d\n", fmt);
+        break;
     }
 
     // Queue the buffer to be displayed once there's room
@@ -147,9 +181,19 @@ void Display::writeFbHeight(uint32_t mask, uint32_t value) {
     fbHeight = (fbHeight & ~mask) | (value & mask);
 }
 
+void Display::writeFbStride(uint32_t mask, uint32_t value) {
+    // Write to the framebuffer stride register
+    fbStride = (fbStride & ~mask) | (value & mask);
+}
+
 void Display::writeFbAddr(uint32_t mask, uint32_t value) {
     // Write to the framebuffer address register
     fbAddress = (fbAddress & ~mask) | (value & mask);
+}
+
+void Display::writePixelFmt(uint32_t mask, uint32_t value) {
+    // Write to the pixel format register
+    pixelFormat = (pixelFormat & ~mask) | (value & mask);
 }
 
 void Display::writePalAddr(uint32_t mask, uint32_t value) {
@@ -158,7 +202,7 @@ void Display::writePalAddr(uint32_t mask, uint32_t value) {
 }
 
 void Display::writePalData(uint32_t mask, uint32_t value) {
-    // Write to a palette entry and move to the next one
+    // Write a palette entry as 32-bit ABGR and move to the next one
     uint8_t r = (value & mask) >> 16;
     uint8_t g = (value & mask) >> 8;
     uint8_t b = (value & mask) >> 0;

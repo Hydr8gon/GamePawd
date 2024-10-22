@@ -35,7 +35,9 @@ namespace Display {
     void writeFbWidth(uint32_t mask, uint32_t value);
     void writeFbYOfs(uint32_t mask, uint32_t value);
     void writeFbHeight(uint32_t mask, uint32_t value);
+    void writeFbStride(uint32_t mask, uint32_t value);
     void writeFbAddr(uint32_t mask, uint32_t value);
+    void writePixelFmt(uint32_t mask, uint32_t value);
     void writePalAddr(uint32_t mask, uint32_t value);
     void writePalData(uint32_t mask, uint32_t value);
 }
